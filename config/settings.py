@@ -71,16 +71,23 @@ TEMPLATES = [
 WSGI_APPLICATION = "config.wsgi.application"
 ASGI_APPLICATION = "config.asgi.application"
 
-DATABASE_URL = os.environ.get("DATABASE_URL")
+SUPABASE_DB_URL = os.environ.get("SUPABASE_DB_URL") 
+DATABASE_URL = SUPABASE_DB_URL or os.environ.get("DATABASE_URL")
 if DATABASE_URL:
     DATABASES = {
         "default": dj_database_url.parse(
             DATABASE_URL,
             conn_max_age=600,
             conn_health_checks=True,
+            disable_server_side_cursors=bool(SUPABASE_DB_URL),
+            ssl_require=bool(SUPABASE_DB_URL),
         )
     }
 else:
+    if not DEBUG:
+        raise ImproperlyConfigured(
+            "Set SUPABASE_DB_URL or DATABASE_URL when DJANGO_DEBUG is false."
+        )
     DATABASES = {
         "default": {
             "ENGINE": "django.db.backends.sqlite3",
